@@ -1,16 +1,4 @@
 
-(*
-    LI332
-    TP 4 : Projet musical
-    Delauney Cynthia
-
-    compilation :
-    ocamlc graphics.cma midi.ml -o projet_musical projet_musical.ml
-    exécution :
-    ./projet_musical 
-
-*)
-
 type objet_musical =
     | Note of int * int * int
     | Silence of int
@@ -25,9 +13,9 @@ let exemple = Parallele([s1;s2])
 let max e1 e2 = if e1 > e2 then e1 else e2 
 
 (* 
-    val duration : objet_musical -> int = <fun> 
-    duration rend la durée de l'objet musical en ms
-*)
+ * duration rend la durée de l'objet musical en ms
+ *)
+
 let rec duration obj =
     match obj with
         | Note(_, d, _) -> d
@@ -35,7 +23,6 @@ let rec duration obj =
         | Sequence l    -> List.fold_left (+) 0 (List.map duration l)
         | Parallele l   -> List.fold_left max  0 (List.map duration l) 
 
-(* val copy : objet_musical -> objet_musical = <fun> *)
 let rec copy obj =
     match obj with
         | Note(a, b, c) -> Note(a, b, c)
@@ -44,9 +31,9 @@ let rec copy obj =
         | Parallele l   -> Parallele(List.map copy l) 
 
 (* 
-    val note_count : objet_musical -> int = <fun> 
-    note_count rend le nombre de note dans l'objet musical
-*)
+ * note_count rend le nombre de note dans l'objet musical
+ *)
+
 let rec note_count obj =
     match obj with
         | Note _ | Silence _ -> 1
@@ -54,9 +41,9 @@ let rec note_count obj =
         | Parallele l        -> List.fold_left (+) 0 (List.map note_count l) 
 
 (* 
-    val stretch : float -> objet_musical -> objet_musical = <fun> 
-    (stretch f obj) multiplie la durée de toutes les notes dans obj de 'f' ms
-*)
+ * (stretch f obj) multiplie la durée de toutes les notes dans obj de 'f' ms
+ *)
+
 let rec stretch = function f -> function obj ->
     match obj with
         | Note(a, b, c) -> Note(a, (int_of_float ((float_of_int b) *. f)), c)
@@ -65,9 +52,9 @@ let rec stretch = function f -> function obj ->
         | Parallele l   -> Parallele(List.map (stretch f) l) 
 
 (*
-    val transpose : objet_musical -> objet_musical = <fun>
-    transpose rend la transposée de l'objet musical
-*)
+ * transpose rend la transposée de l'objet musical
+ *)
+
 let rec transpose n obj =
     match obj with
         | Note(a, b, c) -> Note(a + n, b, c)
@@ -75,9 +62,6 @@ let rec transpose n obj =
         | Sequence l    -> Sequence(List.map (transpose n) l)
         | Parallele l   -> Parallele(List.map (transpose n) l) 
 
-(*  
-    val retrograde : objet_musical -> objet_musical = <fun>
-*)
 let rec retrograde obj =
     match obj with
         | Note(a, b, c)    -> Note(a, b, c)
@@ -85,10 +69,6 @@ let rec retrograde obj =
         | Sequence l       -> Sequence(List.rev(List.map (retrograde) l))
         | Parallele l      -> Parallele(List.rev (List.map (retrograde) l)) 
 
-(*
-    val mirror : objet_musical -> objet_musical = <fun>
-    mirror rend
-*)
 let rec mirror obj =
     match obj with
         | Note(a, b, c)   -> Note(a - 2 * (a - 60), b, c)
@@ -97,27 +77,23 @@ let rec mirror obj =
         | Parallele l     -> Parallele(List.map (mirror) l) 
 
 (*
-    val repeat : objet_musical -> int -> objet_musical = <fun>
-    repeat rend un objet musical dans lequel 'obj' serra répété 'nfr' fois
-*)
+ * repeat rend un objet musical dans lequel 'obj' serra répété 'nfr' fois
+ *)
+
 let rec repeat obj nbr =
     if (nbr = 0 || nbr = 1) 
     then obj
     else Sequence(obj::(repeat obj (nbr - 1))::[]) 
 
-(*
-    val canon : int -> objet_musical -> objet_musical = <fun>
-*)
 let rec canon = function decalage -> function obj -> 
     Parallele(obj::Sequence(Silence(decalage)::obj::[])::[]) 
 
-(* val concat_mo : objet_musical -> objet_musical -> objet_musical = <fun> *)
 let concat_mo = function mo1 -> function mo2 ->
     Sequence(mo1::mo2::[]) 
 
 (* ============================================================================ *)
 
-(* Partie grphique : Piano-roll *)
+(* Partie graphique : Piano-roll *)
 
 let init_graph = 
     Graphics.open_graph " 1000x300" ;;
@@ -133,12 +109,10 @@ let random_color () =
     | 5 -> Graphics.cyan
     | _ -> Graphics.magenta 
 
-
 let draw_note hauteur duree debut =
     Graphics.set_color (random_color ()) ;
     Graphics.fill_rect (debut / 25 ) (hauteur * 2) (duree / 25) 2 ;
     debut + duree
-
 
 let rec draw_om_list = function debut -> function
     | []   -> debut 
@@ -160,8 +134,6 @@ let continue () =
 
 (* Partie MIDI *)
 
-
-(* val gen_liste_note : int -> objet_musical -> (int * int * Midi.midievent) list = <fun> *)
 let rec gen_liste_note_aux debut = function
     | a::[] -> (gen_liste_note debut a)
     | a::q  -> (gen_liste_note debut a)@(gen_liste_note_aux (debut + (duration a)) q) 
@@ -180,7 +152,6 @@ let rec gen_midi_aux debut = function
 let sort_list l =
     (List.sort (fun a x -> if a > x then 1 else (if a = x then 0 else -1)) l) ;;
 
-(* val gen_midi : (int * 'a * 'b) list -> (int * 'a * 'b) list = <fun> *)
 let gen_midi l = (gen_midi_aux 0 (sort_list l)) ;;
 
 (* fonction qui contruit le canon de bach *)
@@ -197,121 +168,46 @@ let bach voix1 voix2 =
             ] )) ;;
 
 let voix1 = Sequence[
-        Note(48, 1500, 100);
-        Note(50, 500, 100);
-        Note(51, 500, 100);
-        Note(52, 500, 100);
-        Note(53, 500, 100);
-        Note(54, 500, 1000);
-        Note(55, 2000, 100);
-        Note(56, 1000, 100);
-        Note(56, 250, 100);
-        Note(53, 250, 100);
-        Note(49, 250, 100);
-        Note(48, 250, 100);
-        Note(47, 1000, 100);
-        Silence 1000;
-        Silence 1000;
-        Note(55, 1000, 100);
-        Note(55, 1000, 100);
-        Note(54, 2000, 100);
-        Note(54, 1000, 100);
-        Note(54, 1000, 100);
-        Note(52, 2000, 100);
-        Note(52, 1000, 100);
-        Note(52, 1000, 100);
-        Note(50, 1000, 100);
-        Note(50, 500, 100);
-        Note(49, 500, 100);
-        Note(46, 500, 100);
-        Note(45, 500, 100);
-        Note(50, 1000, 100);
-        Silence 1000;
-        Silence 1000;
-        Note(55, 1000, 100);
-        Note(55, 1000, 100);
-        Note(53, 1000, 100);
-        Note(52, 2000, 100)] ;;
+        Note(48, 1500, 100);  Note(50, 500, 100);   Note(51, 500, 100);
+        Note(52, 500, 100);   Note(53, 500, 100);   Note(54, 500, 1000);
+        Note(55, 2000, 100);  Note(56, 1000, 100);  Note(56, 250, 100);
+        Note(53, 250, 100);   Note(49, 250, 100);   Note(48, 250, 100);
+        Note(47, 1000, 100);  Silence 1000;         Silence 1000;
+        Note(55, 1000, 100);  Note(55, 1000, 100);  Note(54, 2000, 100);
+        Note(54, 1000, 100);  Note(54, 1000, 100);  Note(52, 2000, 100);
+        Note(52, 1000, 100);  Note(52, 1000, 100);  Note(50, 1000, 100);
+        Note(50, 500, 100);   Note(49, 500, 100);   Note(46, 500, 100);
+        Note(45, 500, 100);   Note(50, 1000, 100);  Silence 1000;
+        Silence 1000;         Note(55, 1000, 100);  Note(55, 1000, 100);
+        Note(53, 1000, 100);  Note(52, 2000, 100)] ;;
 
 let voix2 = Sequence[
-        Silence 250;
-        Note(36, 250, 100);
-        Note(39, 250, 100);
-        Note(43, 250, 100);
-        Note(48, 2000, 100);
-        Note(46, 500, 100);
-        Note(45, 500, 100);
-        Note(46, 1000, 100);
-        Note(46, 250, 100);
-        Note(40, 250, 100);
-        Note(38, 250, 100);
-        Note(40, 250, 100);
-        Note(41, 250, 100);
-        Note(36, 250, 100);
-        Note(41, 250, 100);
-        Note(43, 250, 100);
-        Note(44, 1000, 100);
-        Note(44, 500, 100);
-        Note(44, 500, 100);
-        Note(43, 500, 100);
-        Note(41, 500, 100);
-        Note(39, 1000, 100);
-        Note(39, 250, 100);
-        Note(39, 250, 100);
-        Note(41, 250, 100);
-        Note(39, 250, 100);
-        Note(38, 500, 100);
-        Note(36, 500, 100);
-        Note(37, 1000, 100);
-        Silence 500;
-        Note(38, 500, 100);
-        Note(39, 500, 100);
-        Note(38, 500, 100);
-        Note(36, 250, 100);
-        Note(35, 250, 100);
-        Note(36, 250, 100);
-        Note(35, 250, 100);
-        Note(36, 250, 100);
-        Note(38, 250, 100);
-        Note(36, 250, 100);
-        Note(35, 250, 100);
-        Note(33, 250, 100);
-        Note(31, 250, 100);
-        Note(33, 250, 100);
-        Note(35, 250, 100);
-        Note(36, 250, 100);
-        Note(33, 250, 100);
-        Note(35, 250, 100);
-        Note(36, 250, 100);
-        Note(38, 500, 100);
-        Note(48, 500, 100);
-        Note(46, 250, 100);
-        Note(45, 250, 100);
-        Note(46, 500, 100);
-        Note(43, 500, 100);
-        Note(40, 500, 100);
-        Note(45, 250, 100);
-        Note(43, 250, 100);
-        Note(42, 500, 100);
-        Note(43, 250, 100);
-        Note(45, 250, 100);
-        Note(46, 500, 100);
-        Note(37, 500, 100);
-        Note(38, 500, 100);
-        Silence 1000;
-        Silence 500;
-        Note(38, 500, 100);
-        Note(38, 250, 100);
-        Note(41, 250, 100);
-        Note(40, 250, 100);
-        Note(38, 250, 100);
-        Note(37, 250, 100);
-        Note(38, 250, 100);
-        Note(40, 250, 100);
-        Note(41, 250, 100);
-        Note(43, 250, 100);
-        Note(46, 250, 100);
-        Note(45, 250, 100);
+        Silence 250;         Note(36, 250, 100);   Note(39, 250, 100);
+        Note(43, 250, 100);  Note(48, 2000, 100);  Note(46, 500, 100);
+        Note(45, 500, 100);  Note(46, 1000, 100) ; Note(46, 250, 100);
+        Note(40, 250, 100);  Note(38, 250, 100) ;  Note(40, 250, 100);
+        Note(41, 250, 100);  Note(36, 250, 100) ;  Note(41, 250, 100);
+        Note(43, 250, 100);  Note(44, 1000, 100) ; Note(44, 500, 100);
+        Note(44, 500, 100);  Note(43, 500, 100) ;  Note(41, 500, 100);
+        Note(39, 1000, 100); Note(39, 250, 100) ;  Note(39, 250, 100);
+        Note(41, 250, 100);  Note(39, 250, 100);   Note(38, 500, 100);
+        Note(36, 500, 100);  Note(37, 1000, 100);  Silence 500;
+        Note(38, 500, 100);  Note(39, 500, 100);   Note(38, 500, 100);
+        Note(36, 250, 100);  Note(35, 250, 100);   Note(36, 250, 100);
+        Note(35, 250, 100);  Note(36, 250, 100);   Note(38, 250, 100);
+        Note(36, 250, 100);  Note(35, 250, 100);   Note(33, 250, 100);
+        Note(31, 250, 100);  Note(33, 250, 100);   Note(35, 250, 100);
+        Note(36, 250, 100);  Note(33, 250, 100);   Note(35, 250, 100);
+        Note(36, 250, 100);  Note(38, 500, 100);   Note(48, 500, 100);
+        Note(46, 250, 100);  Note(45, 250, 100);   Note(46, 500, 100);
+        Note(43, 500, 100);  Note(40, 500, 100);   Note(45, 250, 100);
+        Note(43, 250, 100);  Note(42, 500, 100);   Note(43, 250, 100);
+        Note(45, 250, 100);  Note(46, 500, 100);   Note(37, 500, 100);
+        Note(38, 500, 100);  Silence 1000;         Silence 500;
+        Note(38, 500, 100);  Note(38, 250, 100);   Note(41, 250, 100);
+        Note(40, 250, 100);  Note(38, 250, 100);   Note(37, 250, 100);
+        Note(38, 250, 100);  Note(40, 250, 100);   Note(41, 250, 100);
+        Note(43, 250, 100);  Note(46, 250, 100);   Note(45, 250, 100);
         Note(43, 250, 100)] ;;
 
 let () =
